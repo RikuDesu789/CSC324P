@@ -1,2 +1,3 @@
-# CSC324P
-CS324 project directory
+# CSC 324-01 project
+data source:
+https://www.kaggle.com/datasets/bhanupratapbiswas/olympic-data
