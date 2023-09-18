@@ -1,1 +1,2 @@
 time log: week2 3.5 hours (data manipulation)
+          week3 3.2 hours (data cleaning and analysis)
