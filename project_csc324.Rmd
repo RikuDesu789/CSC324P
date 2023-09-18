@@ -1,0 +1,110 @@
+---
+title: "project"
+author: "Riku"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+---
+title: "lab-3.Rmd"
+author: "Riku"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+
+```{r}
+library(dplyr)
+
+# cleaning data : convert abbreviated country name to full name
+country_names <- c(
+  US = "United States",
+  UK = "United Kingdom",
+  DE = "Germany",
+  FR = "France",
+  ES = "Spain",
+  IT = "Italy",
+  NL = "Netherlands",
+  BE = "Belgium",
+  AT = "Austria",
+  CH = "Switzerland",
+  PT = "Portugal",
+  SE = "Sweden",
+  NO = "Norway",
+  DK = "Denmark",
+  FI = "Finland",
+  CZ = "Czech Republic",
+  HU = "Hungary",
+  PL = "Poland",
+  RO = "Romania",
+  BG = "Bulgaria",
+  GR = "Greece",
+  TR = "Turkey"
+)
+
+# Add a new column for country name
+df$country_name <- sapply(df$country, function(x) country_names[x])
+```
+
+```{r}
+df = read.csv("/Users/rikusmriga/Desktop/csc324/CSC324P/hotel_bookings.csv")
+library(ggplot2)
+library(histogram)
+library(tidyverse)
+
+# Create a histogram using ggplot2
+ggplot(df, aes(x = lead_time)) +
+  geom_histogram() +
+  labs(x = "Lead time (days)", y = "Count")
+
+# Pivot the data to summarize the number of bookings by country of origin
+booking_by_country <- df %>%
+  group_by(country) %>%
+  tally() %>%
+  arrange(desc(n))
+
+booking_by_country
+```
+
+```{r}
+summary(df)
+
+table(df$hotel)
+
+table(df$arrival_date_month)
+
+tapply(df$lead_time, df$market_segment, mean)
+
+tapply(df$adr, df$country, mean)
+
+table(df$reservation_status)
+
+# Create a bar plot of the number of bookings by hotel type
+ggplot(df, aes(x = hotel, y = n)) +
+  geom_bar(stat = "sum") +
+  labs(title = "Number of Bookings by Hotel Type")
+
+# Create a line plot of the average lead time by market segment
+ggplot(df, aes(x = market_segment, y = lead_time)) +
+  geom_line() +
+  labs(title = "Average Lead Time by Market Segment")
+
+# Create a scatter plot of the ADR by country
+ggplot(df, aes(x = country, y = adr)) +
+  geom_point() +
+  labs(title = "ADR by Country")
+
+# Perform a linear regression to predict ADR based on lead time and market segment
+model <- lm(adr ~ lead_time + market_segment, data = df)
+
+summary(model)
+```
+
+
