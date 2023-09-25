@@ -104,7 +104,46 @@ ggplot(df, aes(x = country, y = adr)) +
 # Perform a linear regression to predict ADR based on lead time and market segment
 model <- lm(adr ~ lead_time + market_segment, data = df)
 
+
 summary(model)
+```
+# visualization 
+```{r}
+library(shiny)
+library(ggplot2)
+
+# Load the data
+df <- read.csv("/Users/rikusmriga/Desktop/csc324/CSC324P/data/hotel_bookings.csv")
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Bar Plot Selector"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("column_name", "Select Column:", choices = colnames(df)),
+      hr(),
+      helpText("Choose a column.")
+    ),
+    mainPanel(plotOutput("barPlot"))
+  )
+)
+
+# Define the server
+server <- function(input, output) {
+  
+  # Render a bar plot based on the selected column
+  output$barPlot <- renderPlot({
+    if (!is.null(input$column_name)) {
+      ggplot(df, aes(x = df[[input$column_name]])) +
+        geom_bar(fill = "blue", color = "black") +
+        labs(title = paste("Bar Plot of", input$column_name), y = "Count", x = input$column_name) +
+        theme_minimal()
+    }
+  })
+}
+
+# Run the Shiny app
+shinyApp(ui = ui, server = server)
 ```
 
 
