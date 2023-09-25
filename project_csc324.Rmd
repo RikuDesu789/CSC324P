@@ -146,4 +146,27 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+```{r}
+library(dplyr) 
+library(ggplot2)
+# Create a line plot of the number of bookings by month
+df %>%
+  group_by(arrival_date_month) %>%
+  summarise(total_bookings = n()) %>%
+  ggplot(aes(x = arrival_date_month, y = total_bookings, group = 1)) +
+  geom_line() +
+  labs(title = "Booking Trends Over Time", x = "Month", y = "Total Bookings")
+
+```
+
+```{r}
+# Create a pie chart of market segment distribution
+df %>%
+  group_by(market_segment) %>%
+  summarise(total_bookings = n()) %>%
+  ggplot(aes(x = "", y = total_bookings, fill = market_segment)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0) +
+  labs(title = "Market Segment Distribution")
+```
 
