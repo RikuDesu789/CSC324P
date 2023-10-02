@@ -3,4 +3,4 @@ time log: week2 3.5 hours (data manipulation)
           week3 3.0 hours (studying shiny and implement a visulization)
           week4 4.5 hours (added tabs, settings, and the main visualization of the project)
 
-ToDo      week5 add a map tab, add explanation for variables, filter data by company
+ToDo      week5 add a map tab, add explanation for variables, filter data by company, make the visualization interactive(aes string)
