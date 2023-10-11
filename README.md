@@ -8,10 +8,6 @@ This shiny app is designed for data analysis and visualization using the "hotel_
 data source:
 https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand
 
-## Accessing the App
-You can access the live version of this app on Shinyapps.io by following this link: 
-link will be provided once the project is done.
-
 ## Running Locally
 If you want to run this Shiny app locally on your machine for development or testing purposes, follow these steps:
 
