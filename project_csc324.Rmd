@@ -1,291 +1,237 @@
 ---
-title: "project"
+title: "csc324-project-hotel"
 author: "Riku"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+
+Assignment: Individual-project
+Due: 10/11/2023
+Written/online sources used: 
+https://rstudio.github.io/shinydashboard/
+https://epirhandbook.com/en/dashboards-with-shiny.html
+https://stackoverflow.com/questions/tagged/shiny
+
+Help obtained (Acknowledgments): VIVERO mentors
+Add the statement: I confirm that the above list of sources is complete AND that I have not talked to anyone else about the solution to this problem.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
----
-title: "lab-3.Rmd"
-author: "Riku"
-date: "`r Sys.Date()`"
-output: html_document
----
-
-
 
 ```{r}
 library(dplyr)
-# cleaning data : convert abbreviated country name to full name
-country_names <- c(
-  US = "United States",
-  UK = "United Kingdom",
-  DE = "Germany",
-  FR = "France",
-  ES = "Spain",
-  IT = "Italy",
-  NL = "Netherlands",
-  BE = "Belgium",
-  AT = "Austria",
-  CH = "Switzerland",
-  PT = "Portugal",
-  SE = "Sweden",
-  NO = "Norway",
-  DK = "Denmark",
-  FI = "Finland",
-  CZ = "Czech Republic",
-  HU = "Hungary",
-  PL = "Poland",
-  RO = "Romania",
-  BG = "Bulgaria",
-  GR = "Greece",
-  TR = "Turkey"
-)
+library(countrycode)
+library(lubridate)
 
-# Add a new column for country name
-df$country_name <- sapply(df$country, function(x) country_names[x])
-```
-
-```{r}
-df = read.csv("/Users/rikusmriga/Desktop/csc324/CSC324P/hotel_bookings.csv")
-library(ggplot2)
-library(histogram)
-library(tidyverse)
-
-# Create a histogram using ggplot2
-ggplot(df, aes(x = lead_time)) +
-  geom_histogram() +
-  labs(x = "Lead time (days)", y = "Count")
-
-# Pivot the data to summarize the number of bookings by country of origin
-booking_by_country <- df %>%
-  group_by(country) %>%
-  tally() %>%
-  arrange(desc(n))
-
-booking_by_country
-```
-
-```{r}
-summary(df)
-
-table(df$hotel)
-
-table(df$arrival_date_month)
-
-tapply(df$lead_time, df$market_segment, mean)
-
-tapply(df$adr, df$country, mean)
-
-table(df$reservation_status)
-
-# Create a bar plot of the number of bookings by hotel type
-ggplot(df, aes(x = hotel, y = n)) +
-  geom_bar(stat = "sum") +
-  labs(title = "Number of Bookings by Hotel Type")
-
-# Create a line plot of the average lead time by market segment
-ggplot(df, aes(x = market_segment, y = lead_time)) +
-  geom_line() +
-  labs(title = "Average Lead Time by Market Segment")
-
-# Create a scatter plot of the ADR by country
-ggplot(df, aes(x = country, y = adr)) +
-  geom_point() +
-  labs(title = "ADR by Country")
-
-# Perform a linear regression to predict ADR based on lead time and market segment
-model <- lm(adr ~ lead_time + market_segment, data = df)
-
-
-summary(model)
-```
-# visualization 
-```{r}
-library(shiny)
-library(ggplot2)
-
-# Load the data
-df <- read.csv("/Users/rikusmriga/Desktop/csc324/CSC324P/data/hotel_bookings.csv")
-
-# Define the UI
-ui <- fluidPage(
-  titlePanel("Bar Plot Selector"),
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("column_name", "Select Column:", choices = colnames(df)),
-      hr(),
-      helpText("Choose a column.")
-    ),
-    mainPanel(plotOutput("barPlot"))
-  )
-)
-
-# Define the server
-server <- function(input, output) {
+#function that returned cleaned data
+process_hotel_data <- function(data_file) {
   
-  # Render a bar plot based on the selected column
-  output$barPlot <- renderPlot({
-    if (!is.null(input$column_name)) {
-      ggplot(df, aes(x = df[[input$column_name]])) +
-        geom_bar(fill = "blue", color = "black") +
-        labs(title = paste("Bar Plot of", input$column_name), y = "Count", x = input$column_name) +
-        theme_minimal()
-    }
-  })
+  df <- read.csv("/Users/rikusmriga/Desktop/csc324/CSC324P/data/hotel_bookings.csv")
+  
+  # Create a new column 'arrival_date'
+  df$arrival_date <- paste(df$arrival_date_year, df$arrival_date_month, df$arrival_date_day_of_month, sep = "-")
+  df$arrival_date <- ymd(df$arrival_date)
+  
+  # Create a lookup table for converting the names
+  country_lookup <- data.frame(
+    country_code = c("PRT", "GBR", "USA", "ESP", "IRL", "FRA", "NULL", "ROU", "NOR", "OMN", "ARG", "POL", "DEU", "BEL", "CHE", "CN", "GRC", "ITA", "NLD", "DNK", "RUS", "SWE", "AUS", "EST", "CZE", "BRA", "FIN", "MOZ", "BWA", "LUX", "SVN", "ALB", "IND", "CHN", "MEX", "MAR", "UKR", "SMR", "LVA", "PRI", "SRB", "CHL", "AUT", "BLR", "LTU", "TUR", "ZAF", "AGO", "ISR", "CYM", "ZMB", "CPV", "ZWE", "DZA", "KOR", "CRI", "HUN", "ARE", "TUN", "JAM", "HRV", "HKG", "IRN", "GEO", "AND", "GIB", "URY", "JEY", "CAF", "CYP", "COL", "GGY", "KWT", "NGA", "MDV", "VEN", "SVK", "FJI", "KAZ", "PAK", "IDN", "LBN", "PHL", "SEN", "SYC", "AZE", "BHR", "NZL", "THA", "DOM", "MKD", "MYS", "ARM", "JPN", "LKA", "CUB", "CMR", "BIH", "MUS", "COM", "SUR", "UGA", "BGR", "CIV", "JOR", "SYR", "SGP", "BDI", "SAU", "VNM", "PLW", "QAT", "EGY", "PER", "MLT", "MWI", "ECU", "MDG", "ISL", "UZB", "NPL", "BHS", "MAC", "TGO", "TWN", "DJI", "STP", "KNA", "ETH", "IRQ", "HND", "RWA", "KHM", "MCO", "BGD", "IMN", "TJK", "NIC", "BEN", "VGB", "TZA", "GAB", "GHA", "TMP", "GLP", "KEN", "LIE", "GNB", "MNE", "UMI", "MYT", "FRO", "MMR", "PAN", "BFA", "LBY", "MLI", "NAM", "BOL", "PRY", "BRB", "ABW", "AIA", "SLV", "DMA", "PYF", "GUY", "LCA", "ATA", "GTM", "ASM", "MRT", "NCL", "KIR", "SDN", "ATF", "SLE", "LAO"),
+    country_name = c("Portugal", "United Kingdom", "United States", "Spain", "Ireland", "France", "NULL", "Romania", "Norway", "Oman", "Argentina", "Poland", "Germany", "Belgium", "Switzerland", "China", "Greece", "Italy", "Netherlands", "Denmark", "Russia", "Sweden", "Australia", "Estonia", "Czech Republic", "Brazil", "Finland", "Mozambique", "Botswana", "Luxembourg", "Slovenia", "Albania", "India", "China", "Mexico", "Morocco", "Ukraine", "San Marino", "Latvia", "Puerto Rico", "Serbia", "Chile", "Austria", "Belarus", "Lithuania", "Turkey", "South Africa", "Angola", "Israel", "Cayman Islands", "Zambia", "Cape Verde", "Zimbabwe", "Algeria", "Korea", "Costa Rica", "Hungary", "United Arab Emirates", "Tunisia", "Jamaica", "Croatia", "Hong Kong", "Iran", "Georgia", "Andorra", "Gibraltar", "Uruguay", "Jersey", "Central African Republic", "Cyprus", "Colombia", "Guernsey", "Kuwait", "Nigeria", "Maldives", "Venezuela", "Slovakia", "Fiji", "Kazakhstan", "Pakistan", "Indonesia", "Lebanon", "Philippines", "Senegal", "Seychelles", "Azerbaijan", "Bahrain", "New Zealand", "Thailand", "Dominican Republic", "North Macedonia", "Malaysia", "Armenia", "Japan", "Sri Lanka", "Cuba", "Cameroon", "Bosnia and Herzegovina", "Mauritius", "Comoros", "Suriname", "Uganda", "Bulgaria", "Ivory Coast", "Jordan", "Syria", "Singapore", "Burundi", "Saudi Arabia", "Vietnam", "Palau", "Qatar", "Egypt", "Peru", "Malta", "Malawi", "Ecuador", "Madagascar", "Iceland", "Uzbekistan", "Nepal", "Bahamas", "Macau", "Togo", "Taiwan", "Djibouti", "Sao Tome and Principe", "Saint Kitts and Nevis", "Ethiopia", "Iraq", "Honduras", "Rwanda", "Cambodia", "Monaco", "Bangladesh", "Isle of Man", "Tajikistan", "Nicaragua", "Benin", "British Virgin Islands", "Tanzania", "Gabon", "Ghana", "East Timor", "Guadeloupe", "Kenya", "Liechtenstein", "Guinea-Bissau", "Montenegro", "United States Minor Outlying Islands", "Mayotte", "Faroe Islands", "Myanmar", "Panama", "Burkina Faso", "Libya", "Mali", "Namibia", "Bolivia", "Paraguay", "Barbados", "Aruba", "Anguilla", "El Salvador", "Dominica", "French Polynesia", "Guyana", "Saint Lucia", "Antarctica", "Guatemala", "American Samoa", "Mauritania", "New Caledonia", "Kiribati", "Sudan", "French Southern and Antarctic Lands", "Sierra Leone", "Laos")
+  )
+  
+  # Replace country codes with actual country names
+  df$country_name <- country_lookup$country_name[match(df$country, country_lookup$country_code)]
+  country_to_continent <- data.frame(
+    Country = unique(df$country_name),
+    Continent = countrycode::countrycode(unique(df$country_name), origin = 'country.name', destination = 'continent')
+  )
+  
+  # Merge the continent information with the original dataset
+  df <- df %>%
+    left_join(country_to_continent, by = c("country_name" = "Country"))
+  
+  df <- subset(df, select = -country)
+  
+  return(df)
 }
 
-# Run the Shiny app
-shinyApp(ui = ui, server = server)
-```
-
-```{r}
-library(dplyr) 
-library(ggplot2)
-# Create a line plot of the number of bookings by month
-df %>%
-  group_by(arrival_date_month) %>%
-  summarise(total_bookings = n()) %>%
-  ggplot(aes(x = arrival_date_month, y = total_bookings, group = 1)) +
-  geom_line() +
-  labs(title = "Booking Trends Over Time", x = "Month", y = "Total Bookings")
-```
-
-```{r}
-# Create a pie chart of market segment distribution
-df %>%
-  group_by(market_segment) %>%
-  summarise(total_bookings = n()) %>%
-  ggplot(aes(x = "", y = total_bookings, fill = market_segment)) +
-  geom_bar(stat = "identity") +
-  coord_polar("y", start = 0) +
-  labs(title = "Market Segment Distribution")
 ```
 
 
-
 ```{r}
+# Load required libraries
 library(shiny)
 library(ggplot2)
 library(dplyr)
+library(shinythemes)
+library(shinydashboard)
+library(plotly) 
 
-# Load the data
-df <- read.csv(path)
 
-# Define the UI
-ui <- fluidPage(
-  shinythemes::themeSelector(), 
-  titlePanel("Hotel Bookings Analysis"),
+
+# Creata a varible for the list of user input
+column_names <- colnames(process_hotel_data())
+column_names <- setdiff(column_names, c("country", "company", "country_name"))
+
+
+# Define the UI using shinydashboard
+ui <- dashboardPage(
+  dashboardHeader(title = "Hotel Bookings Analysis"),
   
-  tabsetPanel(
-    tabPanel("Visualization", 
-      fluidRow(
-        column(4,
-          selectInput("x_value", "X-Axis Value:", choices = colnames(df)),
-          selectInput("y_value", "Y-Axis Value:", choices = colnames(df)),
-          selectInput("plot_type", "Select Plot Type:",
-                      choices = c("Scatter Plot", "Bar Plot", "Line Plot")),
-           downloadButton("download_data", "Download Data", class = "btn-primary")
-        ),
-        column(8,
-          plotOutput("plot")
-        )
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Home", tabName = "home", icon = icon("home")),
+      menuItem("Booking Trends", tabName = "trend", icon = icon("line-chart")),
+      menuItem("Cancellations Ratio", tabName = "ratio", icon = icon("bar-chart")),
+      menuItem("Data Play ground", tabName = "viz", icon = icon("search")) 
+    )
+  ),
+  
+  dashboardBody(
+    tabItems(
+      
+      #Home tab
+      tabItem(tabName = "home",
+              fluidRow(
+                column(12,
+                       h1("Welcome to the Hotel Bookings Analysis App!"),
+                       p("This app allows you to explore and visualize various aspects of hotel booking data."),
+                       p("Navigate through the tabs to explore different visualizations and analyses."),
+                       h2("Data Columns Explanation"),
+                       
+                       # Booking Details
+                       h3("Booking Details"),
+                       tags$ul(
+                         tags$li("hotel: Type of hotel, such as City Hotel or Resort Hotel."),
+                         tags$li("is_canceled: Indicates if a booking was canceled (1) or not (0)."),
+                         tags$li("lead_time: Number of days that elapsed between the booking date and the arrival date."),
+                         tags$li("arrival_date_year, arrival_date_month, arrival_date_week_number, arrival_date_day_of_month: Components of the arrival date.")
+                       ),
+                       
+                       # Guest Details
+                       h3("Guest Details"),
+                       tags$ul(
+                         tags$li("adults, children, babies: Number of adults, children, and babies, respectively, included in the booking."),
+                         tags$li("country: Country of origin of the booking guest.")
+                       ),
+                       
+                       # Stay Details
+                       h3("Stay Details"),
+                       tags$ul(
+                         tags$li("stays_in_weekend_nights: Number of weekend nights (Saturday or Sunday) the guest stayed or booked to stay at the hotel."),
+                         tags$li("stays_in_week_nights: Number of week nights (Monday to Friday) the guest stayed or booked to stay at the hotel.")
+                       ),
+                       
+                       # Meal and Room Details
+                       h3("Meal and Room Details"),
+                       tags$ul(
+                         tags$li("meal: Type of meal booking. Categories like BB – Bed & Breakfast, HB – Half board, etc."),
+                         tags$li("reserved_room_type, assigned_room_type: Code of room type that was reserved and assigned, respectively."),
+                         tags$li("booking_changes: Number of changes/amendments made to the booking.")
+                       ),
+                       
+                       # Financial Details
+                       h3("Financial Details"),
+                       tags$ul(
+                         tags$li("adr: Average Daily Rate as defined by dividing the sum of all lodging transactions by the total number of staying nights."),
+                         tags$li("deposit_type: Indication on if the guest made a deposit to guarantee the booking."),
+                         tags$li("agent: ID of the travel agency that made the booking.")
+                       ),
+                       
+                       # Others
+                       h3("Others"),
+                       tags$ul(
+                         tags$li("customer_type: Type of booking, assuming one of four categories: Contract, Group, Transient, and Transient-party."),
+                         tags$li("days_in_waiting_list: Number of days the booking was in the waiting list before it was confirmed to the guest."),
+                         tags$li("required_car_parking_spaces: Number of car parking spaces requested by the guest."),
+                         tags$li("total_of_special_requests: Number of special requests made by the guest (e.g., twin bed or high floor)."),
+                         tags$li("reservation_status: Last reservation status"),
+                         tags$li("reservation_status_date: Date at which the last status was set.")
+                       )
+                )
+              )
+              
+              
       ),
-      fluidRow(
-        column(6,
-          verbatimTextOutput("summary_stats")
-        ),
+      
+      # First tab
+      tabItem(tabName = "viz",
+              fluidRow(
+                column(4,
+                       selectInput("x_value", "X-Axis Value:", choices = column_names),
+                       selectInput("y_value", "Y-Axis Value:", choices = column_names),
+                       selectInput("plot_type", "Select Plot Type:",
+                                   choices = c("Scatter Plot", "Bar Plot", "Line Plot")),
+                       downloadButton("download_data", "Download Data", class = "btn-primary")
+                ),
+                column(8,
+                       plotOutput("plot")
+                )
+              ),
+              fluidRow(
+                column(6,
+                       verbatimTextOutput("summary_stats")
+                )
+              )
+      ),
+      
+      # Second tab
+      tabItem(tabName = "ratio",
+              fluidRow(
+                column(4,
+                       selectInput("x_axis", "Choose X-Axis Variable:",
+                                   choices = c("arrival_date_month", "arrival_date_week_number", "arrival_date_day_of_month")),
+                       selectInput("hotel_type", "Filter by Hotel Type:",
+                                   choices = c("All", unique(df$hotel))),
+                       actionButton("update_plot", "Update Plot"),
+                       verbatimTextOutput("cancel_summary")
+                ),
+                column(8,
+                       div(style = "margin-bottom: 20px;", plotlyOutput("plot2")),
+                       div(style = "margin-bottom: 20px;", plotlyOutput("hist_plot"))
+                )
+                
+              )
       )
-    ),
-    tabPanel("Dummy Tab 1"),
-    tabPanel("Dummy Tab 2"),
-    tabPanel("Settings",
-      div(
-        id = "settings",
-        selectInput("app_theme", "Select App Theme:",
-                    choices = c("Default", "Minimal", "Classic", "Dark", "Light")),
-        selectInput("text_size", "Select Text Size:",
-                    choices = c("Small", "Medium", "Large")),
-        selectInput("font_color", "Select Font Color:",
-                    choices = c("Black", "Red", "Blue", "Green")),
-        actionButton("apply_settings", "Apply Settings", class = "btn-primary"),
-        actionButton("reset_settings", "Reset Settings", class = "btn-secondary"),
-        style = "margin: 20px;"
+      ,
+      
+      # third tab
+      tabItem(tabName = "trend",
+              fluidRow(
+                column(4,
+                       selectInput("variable", "Select Variable", choices = c("arrival_date_month", "arrival_date_week_number", "arrival_date_day_of_month"))
+                ),
+                column(4,
+                       dateRangeInput("date_range", "Select Date Range", 
+                                      start = min(df$arrival_date), 
+                                      end = max(df$arrival_date))
+                )
+              ),
+              fluidRow(
+                box(
+                  title = "Booking Trends",
+                  status = "primary",
+                  plotlyOutput("booking_plot")
+                ),
+                box(
+                  title = "Summary Table",
+                  status = "primary",
+                  tableOutput("summary_table")
+                )
+              )
       )
     )
   )
 )
 
+# Load the data
+df <- process_hotel_data()
 
 # Define the server
 server <- function(input, output, session) {
   
-  # Function to apply the selected settings
-  observeEvent(input$apply_settings, {
-    # Apply theme
-    if (input$app_theme == "Minimal") {
-      theme_selected <- theme_minimal()
-    } else if (input$app_theme == "Classic") {
-      theme_selected <- theme_classic()
-    } else if (input$app_theme == "Dark") {
-      theme_selected <- theme_dark()
-    } else if (input$app_theme == "Light") {
-      theme_selected <- theme_light()
-    } else {
-      theme_selected <- NULL
-    }
-    
-    if (!is.null(theme_selected)) {
-      theme_set(theme_selected)
-    }
-    
-    # Apply text size
-    if (input$text_size == "Small") {
-      text_size_selected <- "10px"
-    } else if (input$text_size == "Medium") {
-      text_size_selected <- "12px"
-    } else if (input$text_size == "Large") {
-      text_size_selected <- "16px"
-    } else {
-      text_size_selected <- NULL
-    }
-    
-    if (!is.null(text_size_selected)) {
-      tags$style(HTML(paste(".control-group { font-size: ", text_size_selected, "; }")))
-    }
-    
-    # Apply font color
-    if (input$font_color == "Black") {
-      font_color_selected <- "black"
-    } else if (input$font_color == "Red") {
-      font_color_selected <- "red"
-    } else if (input$font_color == "Blue") {
-      font_color_selected <- "blue"
-    } else if (input$font_color == "Green") {
-      font_color_selected <- "green"
-    } else {
-      font_color_selected <- NULL
-    }
-    
-    if (!is.null(font_color_selected)) {
-      tags$style(HTML(paste(".control-group { color: ", font_color_selected, "; }")))
-    }
-  })
-  
-  # Reset the settings when the "Reset Settings" button is clicked
-  observeEvent(input$reset_settings, {
-    theme_set(NULL)  # Reset the theme
-    tags$style(HTML(".control-group { font-size: 12px; }"))  # Reset text size
-    tags$style(HTML(".control-group { color: black; }"))     # Reset font color
-  })
-  
-  # Create a custom data set base on the user input. This data will be the content of the downloadable csv
+  # Create a custom data set based on the user input. This data will be the content of the downloadable csv.
   filtered_data <- reactive({
     filtered_df <- df
     if (!is.null(input$x_value) && !is.null(input$y_value)) {
@@ -295,26 +241,98 @@ server <- function(input, output, session) {
     return(filtered_df)
   })
   
-  # Render the selected plot (either scatter plot, bar plot, or a bar plot)
+  # Render plot for the plot tab
   output$plot <- renderPlot({
+    gg <- ggplot() +
+      labs(x = input$x_value, y = ifelse(input$plot_type == "Bar Plot", "Count", input$y_value), title = paste(input$plot_type, "of", input$y_value, ifelse(input$plot_type == "Bar Plot", "grouped by", "vs."), input$x_value)) +
+      theme(
+        plot.title = element_text(size = 20),         
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12)
+      )
+    
     if (input$plot_type == "Scatter Plot") {
-      ggplot(filtered_data(), aes(x = .data[[input$x_value]], y = .data[[input$y_value]])) +
-        geom_point() +
-        labs(x = input$x_value, y = input$y_value, title = "Scatter Plot")
+      gg <- gg + geom_point(data = filtered_data(), aes(x = .data[[input$x_value]], y = .data[[input$y_value]]))
     } else if (input$plot_type == "Bar Plot") {
-      ggplot(filtered_data(), aes(x = .data[[input$x_value]], fill = .data[[input$y_value]])) +
-        geom_bar() +
-        labs(x = input$x_value, y = "Count", title = "Bar Plot")
+      gg <- gg + geom_bar(data = filtered_data(), aes(x = .data[[input$x_value]], fill = .data[[input$y_value]]))
     } else if (input$plot_type == "Line Plot") {
-      ggplot(filtered_data(), aes(x = .data[[input$x_value]], y = .data[[input$y_value]])) +
-        geom_line() +
-        labs(x = input$x_value, y = input$y_value, title = "Line Plot")
+      gg <- gg + geom_line(data = filtered_data(), aes(x = .data[[input$x_value]], y = .data[[input$y_value]]))
     }
+    
+    gg
   })
   
-  # summary statistics
+  # summary statistics for "viz" tab
   output$summary_stats <- renderPrint({
     summary(filtered_data())
+  })
+  
+  # Render plot and table for "trend" tab
+  output$booking_plot <- renderPlotly({
+    filtered_data <- df %>%
+      filter(arrival_date >= input$date_range[1] & arrival_date <= input$date_range[2])
+    
+    gg <- ggplot(filtered_data, aes_string(x = input$variable, group = 1)) +
+      geom_line(stat = "count") +
+      labs(title = "Booking Trends Over Time", x = input$variable, y = "Total Bookings") +
+      theme_minimal()
+    
+    plotly::ggplotly(gg)
+  })
+  
+  output$summary_table <- renderTable({
+    filtered_data <- df %>%
+      filter(arrival_date >= input$date_range[1] & arrival_date <= input$date_range[2])
+    
+    summary_data <- filtered_data %>%
+      group_by_at(input$variable) %>%
+      summarise(
+        Total_Bookings = n(),
+        Average_ADR = mean(adr),
+        Average_Lead_Time = mean(lead_time)
+      )
+    summary_data
+  })
+  
+  # Reactive block for filtered data and cancellation ratio calculation for "ratio" tab
+  cancel_data <- reactive({
+    filtered_df <- df
+    if (input$hotel_type != "All") {
+      filtered_df <- filtered_df %>% filter(hotel == input$hotel_type)
+    }
+    filtered_df <- filtered_df %>%
+      group_by_at(vars(input$x_axis)) %>%
+      summarise(CancellationRatio = (sum(is_canceled) / n()) * 100)
+    return(filtered_df)
+  })
+  
+  # Render plots and summary for "ratio" tab
+  observeEvent(input$update_plot, {
+    
+    output$plot2 <- renderPlotly({
+      gg <- ggplot(cancel_data(), aes_string(x = input$x_axis, y = "CancellationRatio")) +
+        geom_bar(stat = "identity", fill = "blue") +
+        labs(title = paste("Cancellations Ratio by", input$x_axis), x = input$x_axis, y = "Cancellation Ratio (%)") 
+      ggplotly(gg, tooltip = "text")
+    })
+    
+    output$hist_plot <- renderPlotly({
+      gg <- ggplot(cancel_data(), aes(x = CancellationRatio)) +
+        geom_density(fill = "blue", color = "black", alpha = 0.7) +
+        labs(title = "Distribution of Cancellation Ratios", x = "Cancellation Ratio", y = "Density")
+      ggplotly(gg, tooltip = "text")
+    })
+    
+    output$cancel_summary <- renderPrint({
+      list(
+        Mean = mean(cancel_data()$CancellationRatio),
+        Median = median(cancel_data()$CancellationRatio),
+        Min = min(cancel_data()$CancellationRatio),
+        Max = max(cancel_data()$CancellationRatio)
+      )
+    })
   })
   
   # Download filtered data as csv
@@ -328,7 +346,12 @@ server <- function(input, output, session) {
   )
 }
 
+
 # Run the Shiny app
 shinyApp(ui = ui, server = server)
 
 ```
+
+
+
+

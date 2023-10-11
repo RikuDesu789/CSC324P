@@ -1,0 +1,6 @@
+time log: week2 3.5 hours (data manipulation)
+          week3 3.2 hours (data cleaning and analysis)
+          week3 3.0 hours (studying shiny and implement a visualization)
+          week4 4.5 hours (added tabs, settings, and the main visualization of the project)
+          Week5 6.0 hours (changed visualizations from shiny to shinydashboard board and completed all the visualizations)
+	  Week6 6.0 hours (made adjustment based in VIVERO and in-class feedback, such as home tab and titles for visualizations)

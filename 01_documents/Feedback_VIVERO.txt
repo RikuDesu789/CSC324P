@@ -1,0 +1,9 @@
+Positives:
+ ・The app displays a high level of interactivity, which is a valuable feature. 
+ ・The use of colors and text size is appropriate and enhances the user experience.
+
+Areas for Improvement:
+ ・Consider simplifying or providing clearer explanations for certain variables to improve user understanding. 
+ ・Potential solutions include revising variable names or incorporating an additional tab with detailed descriptions of each variable.
+ ・Implement titles for all visualizations to enhance clarity and context.
+ ・Ensure that there are informative notes accompanying each visualization, explaining their significance to the user.
