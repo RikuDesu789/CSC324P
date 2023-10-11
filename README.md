@@ -29,3 +29,6 @@ The Shiny app should open in your default web browser, allowing you to interact 
 
 ## Contributing
 If you want to contribute to this project, feel free to fork the repository, make changes, and submit a pull request. We welcome contributions!
+
+## Presentation Link
+https://docs.google.com/presentation/d/1MjSFXNL40BlOfYoRL0risO-RKfFNooEhK_oSx63lg_Y/edit?usp=drive_link
